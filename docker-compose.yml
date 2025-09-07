@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: stock-app-backend
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./models:/app/models
+      - ./backend:/app
+    environment:
+      - MODEL_DIR=/app/models
+      - DEFAULT_LOOKBACK=60
+      - TEST_SIZE=0.2
+      - TZ=Asia/Kolkata
+      - FLASK_ENV=development
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: stock-app-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  models:
+    driver: local
+
+networks:
+  default:
+    name: stock-app-network
